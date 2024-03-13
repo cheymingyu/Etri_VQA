@@ -64,6 +64,38 @@ class GQA_gt_sg_feature_lookup:
         instr_annotated_len = min(len(new_execution_buffer), GQATorchDataset.MAX_EXECUTION_STEP)
         padding_len = GQATorchDataset.MAX_EXECUTION_STEP - instr_annotated_len
 
+        for instr_idx in range(instr_annotated_len):
+            execution_target_list = new_execution_buffer[instr_idx]
+            for trans_obj_id in execution_target_list:
+                execution_bitmap[trans_obj_id, instr_idx] = 1.0
+
+        for instr_idx in range(instr_annotated_len, instr_annotated_len + padding_len)
+            execution_bitmap[:, instr_idx] = execution_bitmap[:, instr_annotated_len - 1]
+        sg_datum.y = execution_bitmap
+
+        return sg_datum
+
+    def build_scene_graph_encoding_vocab(self):
+        def load_str_list(fname):
+            with open(fname) as f:
+                lines = f.read().splitlines()
+            return lines
+
+        tmp_text_list = []
+        tmp_text_list += load_str_list(ROOT_DIR / 'dataset/meta_info/name_gqa.txt')
+        tmp_text_list += load_str_list(ROOT_DIR / 'dataset/meta_info/attr_gqa.txt')
+        tmp_text_list += load_str_list(ROOT_DIR / 'dataset/meta_info/rel_gqa.txt')
+
+        import Constants
+        tmp_text_list += Constants.OBJECTS_INV + Constants.RELATIONS_INV + Constants.ATTRIBUTES_INV
+        tmp_text_list.append("<self>")
+        tmp_text_list = [tmp_text_list]
+
+        GQA_gt_sg_feature_lookup.SG_ENCODING_TEXT.build_vocab(tmp_text_list, vectors="glove.6B.300d")
+
+        return GQA_gt_sg_feature_lookup.SG_ENCODING_TEXT
+
+
     def convert_one_gqa_scene_graph(self, sg_this):
         if len(sg_this['objects'].keys()) == 0:
             sg_this = {
